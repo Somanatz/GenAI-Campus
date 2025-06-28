@@ -1,0 +1,86 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Update Face Encoding - GenAI-Campus</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        form { display: flex; flex-direction: column; gap: 10px; }
+        label { font-weight: bold; }
+        input, button { padding: 8px; margin: 5px 0; }
+        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        #video { width: 320px; height: 240px; border: 1px solid #ccc; }
+        #canvas { display: none; }
+    </style>
+</head>
+<body>
+    <h2>Update Face Encoding</h2>
+    <form id="update-face-form" method="post" enctype="multipart/form-data">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+        <label for="face_image">Face Capture:</label>
+        <video id="video" autoplay></video>
+        <canvas id="canvas"></canvas>
+        <button type="button" id="capture">Capture Face</button>
+        <input type="file" id="face_image" name="face_image" accept="image/*" style="display: none;">
+        <button type="submit">Update Face</button>
+    </form>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureButton = document.getElementById('capture');
+        const faceImageInput = document.getElementById('face_image');
+        const form = document.getElementById('update-face-form');
+
+        async function startVideo() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error('Error accessing webcam:', err);
+                alert('Could not access webcam. Please upload an image instead.');
+                faceImageInput.style.display = 'block';
+            }
+        }
+
+        captureButton.addEventListener('click', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            canvas.toBlob(blob => {
+                const file = new File([blob], 'face_image.jpg', { type: 'image/jpeg' });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                faceImageInput.files = dataTransfer.files;
+            }, 'image/jpeg');
+        });
+
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            try {
+                const response = await fetch('/api/update-face-encoding/', {
+                    method: 'POST',
+                    body: formData,
+                    headers: {
+                        'Authorization': 'Bearer ' + localStorage.getItem('access_token')
+                    }
+                });
+                const data = await response.json();
+                if (data.message) {
+                    alert('Face encoding updated successfully!');
+                    window.location.href = '/';
+                } else {
+                    alert('Error: ' + JSON.stringify(data));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Face encoding update failed.');
+            }
+        });
+
+        window.addEventListener('load', startVideo);
+    </script>
+</body>
+</html>

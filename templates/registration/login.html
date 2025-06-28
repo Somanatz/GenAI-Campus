@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Login - GenAI-Campus</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        form { display: flex; flex-direction: column; gap: 10px; }
+        label { font-weight: bold; }
+        input, button { padding: 8px; margin: 5px 0; }
+        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+    </style>
+</head>
+<body>
+    <h2>Login</h2>
+    <form id="login-form" method="post">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <button type="submit">Login</button>
+        <p><a href="/face-login/">Login with Face Recognition</a></p>
+    </form>
+
+    <script>
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData();
+            formData.append('username', document.getElementById('username').value);
+            formData.append('password', document.getElementById('password').value);
+            try {
+                const response = await fetch('/api/login/', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await response.json();
+                if (data.access) {
+                    localStorage.setItem('access_token', data.access);
+                    localStorage.setItem('refresh_token', data.refresh);
+                    alert('Login successful!');
+                    window.location.href = '/';
+                } else {
+                    alert('Error: ' + JSON.stringify(data));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Login failed.');
+            }
+        });
+    </script>
+</body>
+</html>

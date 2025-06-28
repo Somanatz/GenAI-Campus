@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sign Up - GenAI-Campus</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        form { display: flex; flex-direction: column; gap: 10px; }
+        label { font-weight: bold; }
+        input, select, button { padding: 8px; margin: 5px 0; }
+        button { background-color: #4CAF50; color: white; border: none; cursor: pointer; }
+        button:hover { background-color: #45a049; }
+        #video { width: 320px; height: 240px; border: 1px solid #ccc; }
+        #canvas { display: none; }
+    </style>
+</head>
+<body>
+    <h2>Sign Up</h2>
+    <form id="signup-form" method="post" enctype="multipart/form-data">
+        <label for="username">Username:</label>
+        <input type="text" id="username" name="username" required>
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        <label for="role">Role:</label>
+        <select id="role" name="role" required>
+            <option value="Student">Student</option>
+            <option value="Teacher">Teacher</option>
+            <option value="Parent">Parent</option>
+        </select>
+        <label for="face_image">Face Capture (Required):</label>
+        <video id="video" autoplay></video>
+        <canvas id="canvas"></canvas>
+        <button type="button" id="capture">Capture Face</button>
+        <input type="file" id="face_image" name="face_image" accept="image/*" style="display: none;">
+        <button type="submit">Sign Up</button>
+    </form>
+
+    <script>
+        const video = document.getElementById('video');
+        const canvas = document.getElementById('canvas');
+        const captureButton = document.getElementById('capture');
+        const faceImageInput = document.getElementById('face_image');
+        const form = document.getElementById('signup-form');
+
+        // Access webcam
+        async function startVideo() {
+            try {
+                const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+                video.srcObject = stream;
+            } catch (err) {
+                console.error('Error accessing webcam:', err);
+                alert('Could not access webcam. Please upload an image instead.');
+                faceImageInput.style.display = 'block';
+            }
+        }
+
+        // Capture image from video
+        captureButton.addEventListener('click', () => {
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+            canvas.getContext('2d').drawImage(video, 0, 0);
+            canvas.toBlob(blob => {
+                const file = new File([blob], 'face_image.jpg', { type: 'image/jpeg' });
+                const dataTransfer = new DataTransfer();
+                dataTransfer.items.add(file);
+                faceImageInput.files = dataTransfer.files;
+            }, 'image/jpeg');
+        });
+
+        // Submit form
+        form.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const formData = new FormData(form);
+            try {
+                const response = await fetch('/api/signup/', {
+                    method: 'POST',
+                    body: formData,
+                });
+                const data = await response.json();
+                if (data.id) {
+                    alert('Registration successful! Please log in.');
+                    window.location.href = '/login/';
+                } else {
+                    alert('Error: ' + JSON.stringify(data));
+                }
+            } catch (error) {
+                console.error('Error:', error);
+                alert('Registration failed.');
+            }
+        });
+
+        // Start video on page load
+        window.addEventListener('load', startVideo);
+    </script>
+</body>
+</html>
